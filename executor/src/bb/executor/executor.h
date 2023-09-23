@@ -6,7 +6,8 @@
 #include <mutex>
 #include <map>
 
-#include <executor/threadpool.h>
+#include <bb/executor/threadpool.h>
+#include <bb/executor/exceptions.h>
 
 
 namespace bb

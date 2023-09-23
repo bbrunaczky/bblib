@@ -9,7 +9,7 @@ add_library(${LIB} SHARED ${LIB_SOURCE_FILES})
 target_include_directories(${LIB} PUBLIC src)
 
 install(TARGETS ${LIB} DESTINATION lib)
-install(DIRECTORY src/executor DESTINATION include)
+install(DIRECTORY src/bb DESTINATION include)
 
 # # # # #
 
