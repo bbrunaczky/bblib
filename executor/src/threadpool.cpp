@@ -69,7 +69,6 @@ namespace bb
     }
 
 
-
     EnableThreadPool::EnableThreadPool(ThreadPoolPtr tp):
 	_tp(tp)
     {}
