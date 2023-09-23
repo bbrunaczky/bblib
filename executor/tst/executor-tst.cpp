@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <iostream>
+#include <algorithm>
 
 #include <boost/asio.hpp>
-//#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <executor/executor.h>
 #include <executor/exceptions.h>
@@ -238,6 +238,45 @@ TEST_F(ExecutorTest, stopJoinWithoutDrain)
     _executor.join();
     
     ASSERT_EQ(counter, 3);
+}
+
+
+TEST_F(ExecutorTest, enableThreadPool)
+{
+    auto tp = _executor.addThreadPool(pools::test, 2);
+    _executor.addThreadPool(pools::log, 2);
+
+    struct Task: private bb::EnableThreadPool
+    {
+	std::vector<std::thread::id> _tpThreadIds;
+	
+	Task(bb::ThreadPoolPtr tp):
+	    EnableThreadPool(tp)
+	{
+	    _tpThreadIds = tp->getThreadIds();
+	}
+
+	
+	void proceed()
+	{
+	    auto lambda = [this] ()
+			  {
+			      std::thread::id currentThreadId = std::this_thread::get_id();
+			      auto const it = std::find(_tpThreadIds.cbegin(), _tpThreadIds.cend(), currentThreadId);
+			      ASSERT_NE(_tpThreadIds.end(), it) << "Couldn't find current thread id in the threadpool!";
+			  };
+	    post(lambda);
+	    dispatch(lambda);
+	    defer(lambda);
+	}
+    };
+
+    Task task(tp);
+    task.proceed();
+
+    _executor.stop(false);
+    _executor.join();
+    
 }
 
 

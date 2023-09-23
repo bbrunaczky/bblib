@@ -1,6 +1,8 @@
 #pragma once
 
 #include <thread>
+#include <condition_variable>
+#include <mutex>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
@@ -40,8 +42,6 @@ namespace bb
 	template <typename F>
 	friend void boost::asio::defer(bb::ThreadPoolPtr & tp, F && f);
 
-
-	
 	ThreadPool(std::string const & name, uint32_t numOfThreads);
 	~ThreadPool() = default;
 
@@ -51,8 +51,6 @@ namespace bb
 	ThreadPool & operator=(ThreadPool const &) = delete;
 	ThreadPool & operator=(ThreadPool &&) = delete;
 
-	boost::asio::io_context & getCtx();
-	
 	/*
 	 * Prevent addition of new completion handlers.
 	 * drain = true: ignore (remove) already filed completion handlers.
@@ -64,6 +62,10 @@ namespace bb
 	 */
 	void join();
 
+	boost::asio::io_context & getCtx();
+	
+	std::vector<std::thread::id> getThreadIds() const;
+	
     protected:
     private:
 	void loop(uint32_t threadNo);
@@ -74,6 +76,10 @@ namespace bb
 	boost::asio::io_context _ctx;
 	boost::asio::executor_work_guard<boost::asio::io_context::executor_type> _workGuard;
 	std::vector<std::thread> _threads;
+
+	std::condition_variable _cv;
+	std::mutex _mutex;
+	std::vector<std::thread::id> _threadIds;
     };
 
 
@@ -81,10 +87,10 @@ namespace bb
     {
 	return _ctx;
     }
-    
-    
-   
+
+
 }
+
 
 namespace boost::asio
 {
@@ -125,4 +131,51 @@ namespace boost::asio
 }
 
 	
+
+namespace bb
+{
+    
+    class EnableThreadPool
+    {
+    public:
+	template <typename F>
+	inline void post(F && f);
+	
+	template <typename F>
+	inline void dispatch(F && f);
+	
+	template <typename F>
+	inline void defer(F && f);
+
+    protected:
+	EnableThreadPool(ThreadPoolPtr tp);
+	virtual ~EnableThreadPool() = default;
+
+    private:
+	ThreadPoolPtr _tp;
+    };
+
+
+    template <typename F>
+    inline void EnableThreadPool::post(F && f)
+    {
+	boost::asio::post(_tp, std::forward<F>(f));
+    }
+	
+    template <typename F>
+    inline void EnableThreadPool::dispatch(F && f)
+    {
+	boost::asio::dispatch(_tp, std::forward<F>(f));
+    }
+	
+    template <typename F>
+    inline void EnableThreadPool::defer(F && f)
+    {
+	boost::asio::defer(_tp, std::forward<F>(f));
+    }
+
+
+    
+   
+}
 

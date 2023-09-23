@@ -1,4 +1,7 @@
 #include <executor/threadpool.h>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 namespace bb
 {
@@ -7,9 +10,23 @@ namespace bb
 	_numOfThreads(numOfThreads),
 	_workGuard(_ctx.get_executor())
     {
+	_threadIds.reserve(numOfThreads);
+	std::unique_lock<std::mutex> lock(_mutex);
 	for (uint32_t i=0; i<_numOfThreads; ++i)
 	{
 	    _threads.emplace_back(std::bind(&ThreadPool::loop, this, i));
+	}
+	// Make sure all threads have started
+	bool ret = _cv.wait_for(lock,
+				2s,
+				[this] () -> bool
+				{
+				    return _numOfThreads == _threadIds.size();
+				});
+	if (!ret)
+	{
+	    std::string text = "Threads haven't woken up in 2 seconds. ThreadPool: " + _name + ". Aborting.";
+	    throw std::runtime_error(text);
 	}
     }
 
@@ -35,12 +52,26 @@ namespace bb
 	}
     }
 
+
+    std::vector<std::thread::id> ThreadPool::getThreadIds() const
+    {
+	return _threadIds;
+    }
     
     void ThreadPool::loop(uint32_t threadNo)
     {
+	{
+	    std::unique_lock<std::mutex> lock(_mutex);
+	    _threadIds.push_back(std::this_thread::get_id());
+	    _cv.notify_one();
+	}
 	_ctx.run();
     }
 
 
+
+    EnableThreadPool::EnableThreadPool(ThreadPoolPtr tp):
+	_tp(tp)
+    {}
     
 }
