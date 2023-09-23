@@ -21,8 +21,8 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 enable_testing()
 
-find_package(Boost)
-find_package(GTest)
+find_package(Boost REQUIRED)
+find_package(GTest REQUIRED)
 
 add_subdirectory(executor)
 
