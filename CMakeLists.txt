@@ -26,4 +26,5 @@ find_package(GTest REQUIRED)
 
 add_subdirectory(executor)
 add_subdirectory(logging)
+add_subdirectory(util)
 
