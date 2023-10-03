@@ -40,28 +40,4 @@ namespace bb
     }
 
     
-    void Logger::info(std::string const & text)
-    {
-	// log(LogLevel::INFO, text);
-    }
-
-    
-    void Logger::warning(std::string const & text)
-    {
-	// log(LogLevel::WARNING, text);
-    }
-
-    
-    void Logger::error(std::string const & text)
-    {
-	// log(LogLevel::ERROR, text);
-    }
-
-
-    void Logger::critical(std::string const & text)
-    {
-	// log(LogLevel::CRITICAL, text);
-    }
-
-    
 }

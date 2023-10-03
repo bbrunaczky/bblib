@@ -5,7 +5,7 @@
 
 #include <bb/logging/entry.h>
 #include <bb/logging/levels.h>
-#include <bb/logging/stringify.h>
+#include <bb/util/stringifier.h>
 
 namespace bb
 {
@@ -32,11 +32,14 @@ namespace bb
 
 	template <typename... Ts>
 	void debug(Ts &&... ts);
-	
-	void info(std::string const & text);
-	void warning(std::string const & text);
-	void error(std::string const & text);
-	void critical(std::string const & text);
+	template <typename... Ts>
+	void info(Ts &&... ts);
+	template <typename... Ts>
+	void warning(Ts &&... ts);
+	template <typename... Ts>
+	void error(Ts &&... ts);
+	template <typename... Ts>
+	void critical(Ts &&... ts);
 	
     private:
 	Logger(std::string const & name, LogLevel level, std::function<void (LogEntry &&)> recorder);
@@ -49,6 +52,7 @@ namespace bb
 	std::string _name;
 	LogLevel _logLevel;
 	std::function<void (LogEntry &&)> _recorder;
+	bb::BasicStringifier _stringify;
     };
 
     //
@@ -62,7 +66,7 @@ namespace bb
 	}
 	LogEntry entry{
 	    .level = severity,
-	    .text = bb::Stringify(std::forward<Ts>(ts)...),
+	    .text = _stringify(std::forward<Ts>(ts)...),
 	    .logger = _name,
 	    .timePoint = std::chrono::system_clock::now()
 	};
@@ -74,7 +78,29 @@ namespace bb
     {
 	log(LogLevel::DEBUG, std::forward<Ts>(ts)...);
     }
+    
+    template <typename... Ts>
+    void Logger::info(Ts &&... ts)
+    {
+	log(LogLevel::INFO, std::forward<Ts>(ts)...);
+    }
+    
+    template <typename... Ts>
+    void Logger::warning(Ts &&... ts)
+    {
+	log(LogLevel::WARNING, std::forward<Ts>(ts)...);
+    }
+    
+    template <typename... Ts>
+    void Logger::error(Ts &&... ts)
+    {
+	log(LogLevel::ERROR, std::forward<Ts>(ts)...);
+    }
+    
+    template <typename... Ts>
+    void Logger::critical(Ts &&... ts)
+    {
+	log(LogLevel::CRITICAL, std::forward<Ts>(ts)...);
+    }
    
-    
-    
 }

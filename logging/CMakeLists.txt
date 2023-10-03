@@ -7,6 +7,7 @@ set(LIB_SOURCE_FILES
 
 add_library(${LIB} SHARED ${LIB_SOURCE_FILES})
 target_include_directories(${LIB} PUBLIC src)
+target_link_libraries(${LIB} PUBLIC bb-util)
 
 install(TARGETS ${LIB} DESTINATION lib)
 install(DIRECTORY src/bb DESTINATION include)
