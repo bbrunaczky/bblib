@@ -62,7 +62,7 @@ namespace bb
 	}
 	LogEntry entry{
 	    .level = severity,
-	    .text = bb::stringify(std::forward<Ts>(ts)...),
+	    .text = bb::Stringify(std::forward<Ts>(ts)...),
 	    .logger = _name,
 	    .timePoint = std::chrono::system_clock::now()
 	};

@@ -50,7 +50,12 @@ TEST_F(LoggingTest, basic)
     logging.setLevel(bb::LogLevel::DEBUG);
 
     // std::cout << std::is_convertible<int, std::string>::value << std::endl;
-    // std::cout << bb::stringify(1) << std::endl;
+
+    std::string str = bb::Stringify("apple", 1, 2);
+    std::cout << "'" << bb::Stringify("apple", 1, 2) << "'" << std::endl;
+    // std::cout << "'" << bb::Stringify<false>("apple", 1, 2) << "'" << std::endl;
+
+    
     // std::cout << bb::stringify("apple", std::string("apple"), 1, 2.3) << std::endl;
     // std::cout << bb::stringify() << std::endl;
     // std::string str("debug-apple: ");
