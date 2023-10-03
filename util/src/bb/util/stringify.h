@@ -77,8 +77,8 @@ namespace bb
     }
 
 
-    template <bool space>
-    std::ostream & operator<<(std::ostream & out, Stringify<space> && sfy)
+    template <typename T, bool space>
+    T & operator<<(T && out, Stringify<space> && sfy) // Allow both lvalue and rvalue out objects, allow only rvalue Stringify.
     {
 	out << sfy.str();
 	return out;
