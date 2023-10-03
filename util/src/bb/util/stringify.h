@@ -3,35 +3,27 @@
 #include <string>
 #include <type_traits>
 #include <ostream>
-// todo /bb/ move it to a separate library
 
 namespace bb
 {
 
-    /* todos
-     * stringify<space = true> -- default: false
-     * stringify<precision = N> -- default: 4
-     * cpp-guide:
-     *     - fold expressions
-     *     - is_convertible<>
-     *     - enable_if<>
-     */
-
-    // todo /bb/ move to detail namespace
-    
-    // T is convertibe to std::string
-    template <typename T, typename std::enable_if<std::is_convertible<T, std::string>::value, void>::type * = nullptr>
-    std::string toString(T && t)
+    namespace detail
     {
-	return t;
+    
+	// T is convertibe to std::string
+	template <typename T, typename std::enable_if<std::is_convertible<T, std::string>::value, void>::type * = nullptr>
+	std::string toString(T && t)
+	{
+	    return t;
+	}
+    
+	// T is not convertibe to std::string
+	template <typename T, typename std::enable_if<false == std::is_convertible<T, std::string>::value, void>::type * = nullptr>
+	std::string toString(T && t)
+	{
+	    return std::to_string(std::forward<T>(t));
+	};
     }
-    
-    // T is not convertibe to std::string
-    template <typename T, typename std::enable_if<false == std::is_convertible<T, std::string>::value, void>::type * = nullptr>
-    std::string toString(T && t)
-    {
-	return std::to_string(std::forward<T>(t));
-    };
 
     
     template <bool space = false>
@@ -53,7 +45,7 @@ namespace bb
     Stringify<true>::Stringify(T && t, Ts &&... ts)
     {
 	text = t;
-	((text += ' ' + toString(std::forward<Ts>(ts))), ...);
+	((text += ' ' + detail::toString(std::forward<Ts>(ts))), ...);
     }
     
     template <>
@@ -61,7 +53,7 @@ namespace bb
     Stringify<false>::Stringify(T && t, Ts &&... ts)
     {
 	text = t;
-	((text += toString(std::forward<Ts>(ts))), ...);
+	((text += detail::toString(std::forward<Ts>(ts))), ...);
     }
     
     template <bool space>
