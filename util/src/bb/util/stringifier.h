@@ -2,7 +2,6 @@
 
 #include <string>
 #include <type_traits>
-#include <ostream>
 
 namespace bb
 {
@@ -11,14 +10,16 @@ namespace bb
     {
 
 	// T is convertible to std::string
-	template <typename T, typename std::enable_if<std::is_convertible<T, std::string>::value, void>::type * = nullptr>
+	template <typename T,
+		  typename std::enable_if<std::is_convertible<T, std::string>::value, void>::type * = nullptr>
 	std::string toString(T && t)
 	{
 	    return t;
 	}
     
-	// T is not convertible to std::string
-	template <typename T, typename std::enable_if<false == std::is_convertible<T, std::string>::value, void>::type * = nullptr>
+	// default toString()
+	template <typename T,
+		  typename std::enable_if<false == std::is_convertible<T, std::string>::value, void>::type * = nullptr>
 	std::string toString(T && t)
 	{
 	    return std::to_string(std::forward<T>(t));
@@ -29,10 +30,15 @@ namespace bb
     struct BasicStringifier
     {
 	template <typename T, typename... Ts>
-	std::string operator()(T && t, Ts &&... ts)
-	{
-	    return ( t + ... + detail::toString(std::forward<Ts>(ts)));
-	}
+	std::string operator()(T && t, Ts &&... ts);
+	
+    private:
     };
+
+    template <typename T, typename... Ts>
+    std::string BasicStringifier::operator()(T && t, Ts &&... ts)
+    {
+	return ( detail::toString(std::forward<T>(t)) + ... + detail::toString(std::forward<Ts>(ts)));
+    }
     
 }
