@@ -25,4 +25,5 @@ find_package(Boost REQUIRED)
 find_package(GTest REQUIRED)
 
 add_subdirectory(executor)
+add_subdirectory(util)
 
