@@ -21,7 +21,7 @@ namespace bb
 	// Copy ctor and copy assignment operator are intentionally disabled.
 	// If they were enabled, the class should maintain a shared state for the _logLevel
 	// variable in order to be able to modify its value for all instances at once.
-	// That would require mutexing, so it's better (faster) to use Logger & objects.
+	// That would require mutexing, so it's better (faster) to use (Logger &) objects.
 	Logger(Logger const &) = delete;
 	Logger & operator=(Logger const &) = delete;
 
