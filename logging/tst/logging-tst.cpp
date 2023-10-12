@@ -43,22 +43,60 @@ TEST_F(LoggingTest, instance)
     }
 }
 
-TEST_F(LoggingTest, basic)
+
+TEST_F(LoggingTest, startStopEarlyJoin)
 {
     bb::Logging & logging = bb::Logging::instance();
-    bb::Logger & logger = logging.logger();
-    logging.setLevel(bb::LogLevel::DEBUG);
-
-    logger.debug("debug-apple: ", 1);
-    logger.info("info-apple");
-    logger.warning("warning-apple");
-    logger.error("error-apple");
-    logger.critical("critical-apple");
-    logger.debug("debug-apple ", "debug-banana");
-    logger.warning("warning-apple ", "warning-banana");
-    logger.error("error-apple ", "error-banana");
+    
+    std::thread t1([&] () { logging.start(); });
+    std::thread t2([&] ()
+		   {
+		       std::this_thread::sleep_for(2s);
+		       logging.stop();
+		   });
+    std::this_thread::sleep_for(1s);
+    logging.join();
+    
+    t1.join();
+    t2.join();
 }
 
+
+TEST_F(LoggingTest, startStopLateJoin)
+{
+    bb::Logging & logging = bb::Logging::instance();
+    
+    std::thread t1([&] () { logging.start(); });
+    std::this_thread::sleep_for(1s);
+    logging.stop();
+    logging.join();
+    
+    t1.join();
+}
+
+
+
+    // bb::Logger & logger = logging.logger();
+    // logging.setLevel(bb::LogLevel::DEBUG);
+
+    // struct Target: public bb::LogTarget
+    // {
+    // 	void process(bb::LogEntry const & entry) override
+    // 	{
+    // 	}
+    // };
+
+    // std::unique_ptr<Target> target{new Target()};
+    // logging.addTarget(std::move(target));
+
+    // logger.debug("debug-apple: ", 1);
+    // logger.info("info-apple");
+    // logger.warning("warning-apple");
+    // logger.error("error-apple");
+    // logger.critical("critical-apple");
+    // logger.debug("debug-apple ", "debug-banana");
+    // logger.warning("warning-apple ", "warning-banana");
+    // logger.error("error-apple ", "error-banana");
 
 
 int main(int argc, char ** argv)

@@ -6,11 +6,12 @@
 #include <mutex>
 #include <list>
 #include <queue>
+#include <condition_variable>
 
 #include <bb/logging/logger.h>
 #include <bb/logging/entry.h>
 #include <bb/logging/levels.h>
-#include <bb/logging/consumer.h>
+#include <bb/logging/target.h>
 
 namespace bb
 {
@@ -30,6 +31,13 @@ namespace bb
 	void setLevel(LogLevel level);
 	
 	Logger & logger(std::string const & name = "main");
+
+	void addTarget(std::unique_ptr<LogTarget> && target);
+
+	void start();
+	void stop();
+	void join();
+
     private:
 	Logging();
 
@@ -37,11 +45,23 @@ namespace bb
 	
 	static std::shared_ptr<Logging> _instance;
 
-	std::mutex _mutex;
-	LogLevel _logLevel;
+	std::mutex _dataMutex;
 	uint64_t _counter;
-	std::map<std::string, Logger> _loggers;
 	std::queue<LogEntry> _entries;
-	std::list<std::unique_ptr<LogConsumerBase>> _consumers;
+
+	std::mutex _loggersMutex;
+	LogLevel _logLevel;
+	std::map<std::string, Logger> _loggers;
+
+	std::mutex _loopMutex;
+	std::list<std::unique_ptr<LogTarget>> _targets;
+	bool _loop;
+	bool _running;
+	std::condition_variable _loopCv;
+	bool _loopCvPred;
+
+	std::mutex _joinMutex;
+	std::condition_variable _joinCv;
+	
     };
 }

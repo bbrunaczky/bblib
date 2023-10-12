@@ -23,14 +23,17 @@ namespace bb
 
 
     Logging::Logging():
+	_counter(0),
 	_logLevel(LogLevel::INFO),
-	_counter(0)
+	_loop(false),
+	_running(false),
+	_loopCvPred(false)
     {}
 
     
     void Logging::setLevel(LogLevel level)
     {
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock(_loggersMutex);
 	_logLevel = level;
 	for (auto & [k, v] : _loggers)
 	{
@@ -40,7 +43,7 @@ namespace bb
     
     Logger & Logging::logger(std::string const & name)
     {
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock(_loggersMutex);
 	decltype(_loggers)::iterator it;
 	it = _loggers.find(name);
 	if (_loggers.end() == it)
@@ -58,7 +61,7 @@ namespace bb
 
     void Logging::log(LogEntry && entry)
     {
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock(_dataMutex);
 	entry.counter = _counter++;
 	std::cout << entry.counter << "\t"
 		  << static_cast<int>(entry.level) << "\t"
@@ -66,19 +69,61 @@ namespace bb
 		  << entry.logger << "\t"
 		  << entry.timePoint.time_since_epoch().count() << std::endl;
 	_entries.push(std::move(entry));
+	// todo /bb/ notify the loopCv
     }
 
-    /*
-     * Implement addConsumer() function.
-     * Create a consume() function that can be run from a separate thread.
-     * It checks the queue, process the elements as long there's any.
-     *   - lock
-     *   - front()
-     *   - pop()
-     *   - release
-     *   - process
-     * Wait for a new element via condition_variable.
-     */
+    void Logging::addTarget(std::unique_ptr<LogTarget> && target)
+    {
+	std::unique_lock<std::mutex> lock(_loopMutex);
+	_targets.push_back(std::move(target));
+	
+    }
+
+
+    void Logging::start()
+    {
+	std::unique_lock lock(_loopMutex);
+	if (_loop)
+	{
+	    return;
+	}
+	   
+	_loop = true;
+	_running = true;
+	while (_loop)
+	{
+	    // todo /bb/ process log entries
+	    
+	    _loopCv.wait(lock, [this] () { return _loopCvPred; } );
+	    _loopCvPred = false;
+    	}
+	
+	std::unique_lock<std::mutex> joinLock(_joinMutex);
+	_running = false;
+	_joinCv.notify_one();
+    }
+
+    
+    void Logging::stop()
+    {
+	std::unique_lock<std::mutex> lock(_loopMutex);
+	_loop = false;
+	_loopCvPred = true;
+	_loopCv.notify_one();
+    }
+
+    
+    void Logging::join()
+    {
+	std::unique_lock<std::mutex> lock(_joinMutex);
+	if (!_running)
+	{
+	    return;
+	}
+	
+	_joinCv.wait(lock, [this] () { return !_running; });
+	
+    }
 
 }
 
