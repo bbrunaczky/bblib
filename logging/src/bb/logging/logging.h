@@ -5,7 +5,6 @@
 #include <map>
 #include <mutex>
 #include <list>
-#include <queue>
 #include <condition_variable>
 
 #include <bb/logging/logger.h>
@@ -47,7 +46,7 @@ namespace bb
 
 	std::mutex _dataMutex;
 	uint64_t _counter;
-	std::queue<LogEntry> _entries;
+	std::list<LogEntry> _entries;
 
 	std::mutex _loggersMutex;
 	LogLevel _logLevel;

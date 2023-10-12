@@ -40,6 +40,7 @@ namespace bb
 	    v.setLevel(_logLevel);
 	}
     }
+
     
     Logger & Logging::logger(std::string const & name)
     {
@@ -59,19 +60,18 @@ namespace bb
 	return it->second;
     }
 
+    
     void Logging::log(LogEntry && entry)
     {
 	std::unique_lock<std::mutex> lock(_dataMutex);
 	entry.counter = _counter++;
-	std::cout << entry.counter << "\t"
-		  << static_cast<int>(entry.level) << "\t"
-		  << entry.text << "\t"
-		  << entry.logger << "\t"
-		  << entry.timePoint.time_since_epoch().count() << std::endl;
-	_entries.push(std::move(entry));
-	// todo /bb/ notify the loopCv
+	_entries.push_back(std::move(entry));
+
+	std::unique_lock loopLock(_loopMutex);
+	_loopCv.notify_one();
     }
 
+    
     void Logging::addTarget(std::unique_ptr<LogTarget> && target)
     {
 	std::unique_lock<std::mutex> lock(_loopMutex);
@@ -93,6 +93,18 @@ namespace bb
 	while (_loop)
 	{
 	    // todo /bb/ process log entries
+	    decltype(_entries) entries;
+	    {
+		std::unique_lock<std::mutex> dataLock(_dataMutex);
+		entries = std::move(_entries);
+	    }
+	    for (auto const & entry : entries)
+	    {
+		for (auto & target: _targets)
+		{
+		    target->process(entry);
+		}
+	    }
 	    
 	    _loopCv.wait(lock, [this] () { return _loopCvPred; } );
 	    _loopCvPred = false;

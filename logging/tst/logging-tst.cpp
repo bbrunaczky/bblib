@@ -76,27 +76,45 @@ TEST_F(LoggingTest, startStopLateJoin)
 
 
 
-    // bb::Logger & logger = logging.logger();
-    // logging.setLevel(bb::LogLevel::DEBUG);
+TEST_F(LoggingTest, target)
+{
+    bb::Logging & logging = bb::Logging::instance();
+    bb::Logger & logger = logging.logger();
+    logging.setLevel(bb::LogLevel::DEBUG);
+    std::thread t1([&] () { logging.start(); });
 
-    // struct Target: public bb::LogTarget
-    // {
-    // 	void process(bb::LogEntry const & entry) override
-    // 	{
-    // 	}
-    // };
+    struct Target: public bb::LogTarget
+    {
+	void process(bb::LogEntry const & entry) override
+	{
+	    // todo /bb/ check google mocks
+	    std::cout << entry.counter << "\t"
+		      << static_cast<int>(entry.level) << "\t"
+		      << entry.text << "\t"
+		      << entry.logger << "\t"
+		      << entry.timePoint.time_since_epoch().count() << std::endl;
+	}
+    };
 
-    // std::unique_ptr<Target> target{new Target()};
-    // logging.addTarget(std::move(target));
+    logging.addTarget(std::make_unique<Target>());
 
-    // logger.debug("debug-apple: ", 1);
-    // logger.info("info-apple");
-    // logger.warning("warning-apple");
-    // logger.error("error-apple");
-    // logger.critical("critical-apple");
-    // logger.debug("debug-apple ", "debug-banana");
-    // logger.warning("warning-apple ", "warning-banana");
-    // logger.error("error-apple ", "error-banana");
+    logger.debug("debug-apple: ", 1);
+    logger.info("info-apple");
+    logger.warning("warning-apple");
+    logger.error("error-apple");
+    logger.critical("critical-apple");
+    logger.debug("debug-apple ", "debug-banana");
+    logger.warning("warning-apple ", "warning-banana");
+    logger.error("error-apple ", "error-banana");
+
+    std::this_thread::sleep_for(1s);
+    logging.stop();
+    logging.join();
+    
+    t1.join();
+
+}
+
 
 
 int main(int argc, char ** argv)
